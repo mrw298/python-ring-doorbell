@@ -1,0 +1,27 @@
+{
+    "user_locations": [
+        {
+            "location_id": "mock-location-id",
+            "owner_id": "123456",
+            "name": "10 Downing Street",
+            "geo_coordinates": {
+                "latitude": 51.5033635,
+                "longitude": -0.1298135
+            },
+            "address": {
+                "address1": "10 Downing Street",
+                "address2": "",
+                "cross_street": "",
+                "city": "London",
+                "state": "London",
+                "zip_code": "SW1A 2AA",
+                "country": "UK",
+                "timezone": "Europe/London"
+            },
+            "user_verified": true,
+            "geo_service_verified": "unverified",
+            "created_at": "2023-01-20T16:00:00Z",
+            "updated_at": "2023-01-21T16:00:00Z"
+        }
+    ]
+}

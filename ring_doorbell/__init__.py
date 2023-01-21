@@ -10,11 +10,13 @@ from .const import (
     NEW_SESSION_ENDPOINT,
     DINGS_ENDPOINT,
     POST_DATA,
+    LOCATIONS_ENDPOINT,
     GROUPS_ENDPOINT,
 )
 from .auth import Auth  # noqa
 from .doorbot import RingDoorBell
 from .chime import RingChime
+from .location import RingLocation
 from .stickup_cam import RingStickUpCam
 from .group import RingLightGroup
 
@@ -44,6 +46,7 @@ class Ring(object):
         self.chime_health_data = None
         self.doorbell_health_data = None
         self.dings_data = None
+        self.location_data = None
         self.groups_data = None
 
     def update_data(self):
@@ -54,6 +57,8 @@ class Ring(object):
         self.update_devices()
 
         self.update_dings()
+
+        self.update_locations()
 
         self.update_groups()
 
@@ -82,6 +87,15 @@ class Ring(object):
         """Update dings data."""
         self.dings_data = self.query(DINGS_ENDPOINT).json()
 
+    def update_locations(self):
+        """Update location data."""
+        data = self.query(LOCATIONS_ENDPOINT).json()
+        if data["user_locations"] is not None:
+            self.location_data = {}
+
+            for location in data["user_locations"]:
+                self.location_data[location["location_id"]] = location
+
     def update_groups(self):
         """Update groups data."""
         # Get all locations
@@ -101,11 +115,18 @@ class Ring(object):
                     self.groups_data[group["device_group_id"]] = group
 
     def query(
-        self, url, method="GET", extra_params=None, data=None, json=None, timeout=None
+        self,
+        url,
+        host_uri=API_URI,
+        method="GET",
+        extra_params=None,
+        data=None,
+        json=None,
+        timeout=None,
     ):
         """Query data from Ring API."""
         return self.auth.query(
-            API_URI + url,
+            host_uri + url,
             method=method,
             extra_params=extra_params,
             data=data,
@@ -124,6 +145,15 @@ class Ring(object):
             ]
 
         return devices
+
+    def locations(self):
+        """Get all locations."""
+        locations = {}
+
+        for location_id in self.location_data:
+            locations[location_id] = RingLocation(self, location_id)
+
+        return locations
 
     def groups(self):
         """Get all groups."""

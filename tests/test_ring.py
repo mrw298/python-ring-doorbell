@@ -6,6 +6,7 @@ from tests.helpers import load_fixture
 import requests_mock
 
 from ring_doorbell import Ring, Auth
+from ring_doorbell.location import RingLocationMode, RingLocation
 
 
 @pytest.fixture
@@ -70,6 +71,22 @@ def mock_ring_requests():
         )
         mock.post(
             "https://api.ring.com/groups/v1/locations/mock-location-id/groups/mock-group-id/devices",
+            text="ok",
+        )
+        mock.get(
+            "https://api.ring.com/devices/v1/locations",
+            text=load_fixture("ring_locations.json"),
+        )
+        mock.get(
+            "https://app.ring.com/api/v1/mode/location/mock-location-id",
+            text=load_fixture("ring_location_mode.json"),
+        )
+        mock.get(
+            "https://app.ring.com/api/v1/mode/location/mock-location-id2",
+            text=load_fixture("ring_location_mode_invalid.json"),
+        )
+        mock.post(
+            "https://app.ring.com/api/v1/mode/location/mock-location-id",
             text="ok",
         )
         yield mock
@@ -178,6 +195,34 @@ def test_stickup_cam_controls(ring, mock_ring_requests):
     assert "duration" not in history[2].qs
     assert history[3].path == "/clients_api/doorbots/987652/siren_on"
     assert history[3].qs["duration"][0] == "30"
+
+
+def test_locations(ring):
+    location = ring.locations()["mock-location-id"]
+
+    assert location.owner_id == "123456"
+    assert location.name == "10 Downing Street"
+    assert location.latitude == 51.5033635
+    assert location.longitude == -0.1298135
+    assert location.address1 == "10 Downing Street"
+    assert location.address2 == ""
+    assert location.cross_street == ""
+    assert location.city == "London"
+    assert location.state == "London"
+    assert location.zip_code == "SW1A 2AA"
+    assert location.country == "UK"
+    assert location.timezone == "Europe/London"
+
+    # Check getting the location mode
+    assert location.get_mode() == RingLocationMode.HOME
+
+    # Attempt setting the location to Away
+    location.set_mode(RingLocationMode.AWAY)
+
+
+def test_location_mode_invalid_response(ring):
+    location = RingLocation(ring, "mock-location-id2")
+    assert location.get_mode() is None
 
 
 def test_light_groups(ring):
